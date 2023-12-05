@@ -5,26 +5,35 @@ date: "2023-12-05"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+## The following function will perform Euler's Method on a scalar
+## Non-Autonomous ODE (RHS depends on y and t)
+## the function needs to be specified ahead of time as 
+## Fy<-function(y,t){f}    where f is some function of y and t
+## e.g. for f(y) = y^2 + sin(t)
+## Fyt<-function(y,t){y^2 + sin(t)}
+## Euler's Method starts at t=a and runs to t=b
+## where y(a) = y0 and the step size is delta(t) = (b-a)/(n-1)
+## Usage:  after Fyt has been specified run the command
+## EulerTable<-EulerNATable(Fyt,y0,a,b,n)
+## with appropriate values of y0, a, b, and n
+## to see the table of approximate values of y run
+## EulerTable in the console
+
+
+```{r}
+EulerNATable<-function(Fyt=function(y,t){},y0,a,b,n){
+  y<-0
+  t<-seq(a,b,by=(b-a)/(n-1))
+  y[1]<-y0
+  for(i in 2:n){
+    y[i]<-y[i-1]+Fyt(y[i-1],t[i-1])*(b-a)/(n-1)
+  }
+  
+  plot(t,y)
+  points(t[1],y[1],col="red",pch=20,cex=2.5)
+  recordPlot()
+  table<-data.frame(t,y)
+  return(table)
+}
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
