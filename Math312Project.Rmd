@@ -35,7 +35,52 @@ EulerNATable<-function(Fyt=function(y,t){},y0,a,b,n){
   table<-data.frame(t,y)
   return(table)
 }
+
+Fyt = function(y,t){y * (-y)}
 ```
+
+```{r eval = FALSE}
+library(shiny)
+# Build the shiny server
+server_KNN <- function(input, output) {
+  output$model_plot <- renderPlot({
+    EulerNATable(Fyt, input$y0_pick, input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * 100 + 1)
+    
+  })
+}
+
+# Build the shiny user interface
+ui_KNN <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      h4("Select things:"), 
+      #textInput("Fyt", "What is Fyt? (please use proper R syntax)"),
+      numericInput("y0_pick", "Initial y value (y0)", value = 0, min = 0, max = 100),
+      numericInput("a_pick", "Start Time", value = 0, min = 0, max = 100),
+      numericInput("b_pick", "End Time", value = 0, min = 0, max = 100),
+      
+      
+    ),
+    mainPanel(
+      plotOutput("model_plot")
+    )
+  )
+)
+
+
+# Run the shiny app!
+shinyApp(ui = ui_KNN, server = server_KNN)
+```
+
+
+
+
+
+
+
+
+
+
 
 shiny app example:
 
