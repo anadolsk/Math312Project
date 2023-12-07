@@ -52,33 +52,37 @@ Gxyt <- function(x,y,t){-9.8*sin(x) - y + 0.5*sin(t)}
 ```{r eval = FALSE}
 library(shiny)
 # Build the shiny server
-server_KNN <- function(input, output) {
-  output$model_plot <- renderPlot({
-    HeunSystemNATable(Fxyt, Gxyt, input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * 100 + 1) #currently automatically using delta t = 0.01
-  })
+server_Heun <- function(input, output) {
+  output$xy_plot <- renderPlot({HeunSystemNATable(Fxyt, Gxyt, input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)})
+  
+  output$xt_plot <- renderPlot(plot(HeunSystemNATable(Fxyt, Gxyt, input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, HeunSystemNATable(Fxyt, Gxyt, input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$x, xlab = "t", ylab = "x"))
+
+  output$yt_plot <- renderPlot(plot(HeunSystemNATable(Fxyt, Gxyt, input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, HeunSystemNATable(Fxyt, Gxyt, input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$y, xlab = "t", ylab = "y"))
 }
 
+
 # Build the shiny user interface
-ui_KNN <- fluidPage(
+ui_Heun <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       h4("Select things:"), 
       numericInput("x0_pick", "Initial x value (x0)", value = 0, min = 0, max = 100),
       numericInput("y0_pick", "Initial y value (y0)", value = 0, min = 0, max = 100),
       numericInput("a_pick", "Start Time", value = 0, min = 0, max = 100),
-      numericInput("b_pick", "End Time", value = 1, min = 0, max = 100),
-      
-      
+      numericInput("b_pick", "End Time", value = 1, min = 0, max = 100, step = 0.1),
+      numericInput("dt_pick", "Delta t (0<dt<=1)", value = 0.01, min = 0, max = 1),
     ),
     mainPanel(
-      plotOutput("model_plot")
+      plotOutput("xy_plot"),
+      plotOutput("xt_plot"),
+      plotOutput("yt_plot")
     )
   )
 )
 
 
 # Run the shiny app! <- you'll see an error here but don't worry about it
-shinyApp(ui = ui_KNN, server = server_KNN)
+shinyApp(ui = ui_Heun, server = server_Heun)
 ```
 
 
@@ -119,22 +123,22 @@ Fyt = function(y,t){y * (-y)}
 ```{r eval = FALSE}
 library(shiny)
 # Build the shiny server
-server_KNN <- function(input, output) {
+server_Euler <- function(input, output) {
   output$model_plot <- renderPlot({
-    EulerNATable(Fyt, input$y0_pick, input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * 100 + 1)
+    EulerNATable(function(y,t){input$fyt}, input$y0_pick, input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * 100 + 1),
     
   })
 }
 
 # Build the shiny user interface
-ui_KNN <- fluidPage(
+ui_Euler <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       h4("Select things:"), 
-      #textInput("fyt", "What is Fyt? (please use proper R syntax)"),
+      textInput("fyt", "What is Fyt? (please use proper R syntax)"),
       numericInput("y0_pick", "Initial y value (y0)", value = 0, min = 0, max = 100),
       numericInput("a_pick", "Start Time", value = 0, min = 0, max = 100),
-      numericInput("b_pick", "End Time", value = 0, min = 0, max = 100),
+      numericInput("b_pick", "End Time", value = 1, min = 0, max = 100),
       
       
     ),
@@ -146,7 +150,7 @@ ui_KNN <- fluidPage(
 
 
 # Run the shiny app!
-shinyApp(ui = ui_KNN, server = server_KNN)
+shinyApp(ui = ui_Euler, server = server_Euler)
 ```
 
 
