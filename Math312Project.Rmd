@@ -48,10 +48,84 @@ EulerSystemNATable<-function(Fxyt=function(x,y,t){},Gxyt=function(x,y,t){},x0,y0
 ```
 
 ```{r}
-Fxyt <- function(x,y,t){y}
-Gxyt <- function(x,y,t){-9.8*sin(x) - y + 0.5*sin(t)}
+# Fxyt <- function(x,y,t){y}
+# Gxyt <- function(x,y,t){-9.8*sin(x) - y + 0.5*sin(t)}
 buttons <- list("Heun's Method", "Euler's Method")
 ```
+
+```{r}
+library(shiny)
+# Build the shiny user interface
+ui_methods <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      h4("Select things:"),
+      textInput("eq_dxdt", "Equation for dx/dt", value = "sin(y)"),  # Equation input for dx/dt
+      textInput("eq_dydt", "Equation for dy/dt", value = "cos(x)"),  # Equation input for dy/dt
+      actionButton("heun", "Heun's Method"),
+      actionButton("euler", "Euler's Method"), 
+      numericInput("x0_pick", "Initial x value (x0)", value = 0, min = 0, max = 100),
+      numericInput("y0_pick", "Initial y value (y0)", value = 0, min = 0, max = 100),
+      numericInput("a_pick", "Start Time", value = 0, min = 0, max = 100),
+      numericInput("b_pick", "End Time", value = 1, min = 0, max = 100, step = 0.1),
+      numericInput("dt_pick", "Delta t (0<dt<=1)", value = 0.01, min = 0, max = 1, step = 0.01),
+    ),
+    mainPanel(
+      plotOutput("xy_plot"),
+      plotOutput("xt_plot"),
+      plotOutput("yt_plot")
+    )
+  )
+)
+
+```
+
+
+```{r eval = FALSE}
+# Build the shiny server
+server_methods <- function(input, output) {
+  Fxyt <- reactive({
+    eval(parse(text = paste0("function(x, y, t) {", input$eq_dxdt, "}")))
+  })
+
+  Gxyt <- reactive({
+    eval(parse(text = paste0("function(x, y, t) {", input$eq_dydt, "}")))
+  })
+
+  observeEvent(input$heun, {
+    output$xy_plot <- renderPlot({HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,         (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)})
+  
+    output$xt_plot <- renderPlot(plot(HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$x, xlab = "t", ylab = "x"))
+
+    output$yt_plot <- renderPlot(plot(HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$y, xlab = "t", ylab = "y"))
+  })
+    observeEvent(input$euler, {
+    output$xy_plot <- renderPlot({EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,         (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)})
+  
+    output$xt_plot <- renderPlot(plot(EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$x, xlab = "t", ylab = "x"))
+
+    output$yt_plot <- renderPlot(plot(EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$y, xlab = "t", ylab = "y"))
+  })
+  
+  # Replace Fxyt and Gxyt function calls with Fxyt() and Gxyt() to use the reactive expressions
+}
+
+shinyApp(ui = ui_methods, server = server_methods)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r eval = FALSE}
 library(shiny)
@@ -84,7 +158,7 @@ ui_methods <- fluidPage(
       numericInput("y0_pick", "Initial y value (y0)", value = 0, min = 0, max = 100),
       numericInput("a_pick", "Start Time", value = 0, min = 0, max = 100),
       numericInput("b_pick", "End Time", value = 1, min = 0, max = 100, step = 0.1),
-      numericInput("dt_pick", "Delta t (0<dt<=1)", value = 0.01, min = 0, max = 1),
+      numericInput("dt_pick", "Delta t (0<dt<=1)", value = 0.01, min = 0, max = 1, step = 0.01),
     ),
     mainPanel(
       plotOutput("xy_plot"),
