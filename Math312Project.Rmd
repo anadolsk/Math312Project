@@ -18,10 +18,6 @@ HeunSystemNATable<-function(Fxyt=function(x,y,t){},Gxyt=function(x,y,t){},x0,y0,
     x[i]<-x[i-1]+(Fxyt(x[i-1],y[i-1],t[i-1])+Fxyt(x_temp,y_temp,t[i]))*(b-a)/(2*(n-1))    
     y[i]<-y[i-1]+(Gxyt(x[i-1],y[i-1],t[i-1])+Gxyt(x_temp,y_temp,t[i]))*(b-a)/(2*(n-1))
   }
-  plot(x,y,col="red",pch=20,cex=1.5)
-  points(x[1],y[1],col="blue",pch=20,cex=2.5)
-  recordPlot()
-  
   table<-data.frame(t,x,y)
   return(table)
 }
@@ -51,10 +47,6 @@ RungeKuttaSystemTable<-function(Fxyt=function(t,x,y){}, Gxyt=function(t,x,y){},x
     x[i]<-x[i-1]+(h/6)*(k1+2*k2+2*k3+k4)
     y[i]<-y[i-1]+(h/6)*(l1+2*l2+2*l3+l4)
   }
-  plot(x,y,col="red",pch=20,cex=1.5)
-  points(x[1],y[1],col="blue",pch=20,cex=2.5)
-  recordPlot()
-  
   table<-data.frame(t,x,y)
   return(table)
 }
@@ -71,10 +63,6 @@ EulerSystemNATable<-function(Fxyt=function(x,y,t){},Gxyt=function(x,y,t){},x0,y0
     x[i]<-x[i-1]+Fxyt(x[i-1],y[i-1],t[i-1])*(b-a)/(n-1)    
     y[i]<-y[i-1]+Gxyt(x[i-1],y[i-1],t[i-1])*(b-a)/(n-1)
   }
-  
-  plot(x,y,col="red",pch=20,cex=2.5)
-  points(x[1],y[1],col="red",pch=20,cex=2.5)
-  recordPlot()
   table<-data.frame(t,x,y)
   return(table)
 }
@@ -92,6 +80,7 @@ ui_methods <- fluidPage(
       actionButton("euler", "Euler's Method"),
       actionButton("heun", "Heun's Method"),
       actionButton("runge", "Runge-Kutta Method"),
+      actionButton("combined_plot", "Plot Combined Methods"),
       numericInput("x0_pick", "Initial x value (x0)", value = 0, min = 0, max = 100),
       numericInput("y0_pick", "Initial y value (y0)", value = 0, min = 0, max = 100),
       numericInput("a_pick", "Start Time", value = 0, min = 0, max = 100),
@@ -101,7 +90,8 @@ ui_methods <- fluidPage(
     mainPanel(
       plotOutput("xy_plot"),
       plotOutput("xt_plot"),
-      plotOutput("yt_plot")
+      plotOutput("yt_plot"),
+      plotOutput("combined_xt_yt_plot")
     )
   )
 )
@@ -119,36 +109,183 @@ server_methods <- function(input, output) {
   Gxyt <- reactive({
     eval(parse(text = paste0("function(x, y, t) {", input$eq_dydt, "}")))
   })
+  
+  # Define reactive objects for each method
+  data_euler <- reactive({
+    EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick, (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)
+  })
 
-  
-  
-  observeEvent(input$heun, {
-    output$xy_plot <- renderPlot({HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,         (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)})
-  
-    output$xt_plot <- renderPlot(plot(HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$x, xlab = "t", ylab = "x"))
+  data_heun <- reactive({
+    HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick, (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)
+  })
 
-    output$yt_plot <- renderPlot(plot(HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$y, xlab = "t", ylab = "y"))
+  data_runge <- reactive({
+    RungeKuttaSystemTable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick, (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)
   })
   
+  # Reactive value to track the state of the combined plot button
+  show_combined_xt_yt <- reactiveVal(TRUE)
   
-  
-    observeEvent(input$euler, {
-    output$xy_plot <- renderPlot({EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,         (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)})
-  
-    output$xt_plot <- renderPlot(plot(EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$x, xlab = "t", ylab = "x"))
+    
+observeEvent(input$heun, {
+  show_combined_xt_yt(TRUE)
+  data_heun <- reactive({
+    HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick, (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)
+  }) 
+    
+  output$xy_plot <- renderPlot({
+    plotData <- data_heun()
+    plot(plotData$x, plotData$y, col="red", pch=20, cex=1.5, xlab="x", ylab="y")
+    points(plotData$x[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
+    points(plotData$x[round(length(plotData$x)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
+    points(plotData$x[length(plotData$x)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+  })
 
-    output$yt_plot <- renderPlot(plot(EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$y, xlab = "t", ylab = "y"))
+  output$xt_plot <- renderPlot({
+    plotData <- data_heun()
+    plot(plotData$t, plotData$x, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="x")
+    points(plotData$t[1], plotData$x[1], col="blue", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$x[round(length(plotData$x)/2)], col="green", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$x[length(plotData$x)], col="purple", pch=20, cex=2.5) # End
+  })
+
+  output$yt_plot <- renderPlot({
+    plotData <- data_heun()
+    plot(plotData$t, plotData$y, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="y")
+    points(plotData$t[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+  })
+})
+ 
+
+observeEvent(input$euler, {
+  show_combined_xt_yt(TRUE)
+  data_euler <- reactive({
+    EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick, (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)
+  }) 
+    
+  output$xy_plot <- renderPlot({
+    plotData <- data_euler()
+    plot(plotData$x, plotData$y, col="red", pch=20, cex=1.5, xlab="x", ylab="y")
+    points(plotData$x[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
+    points(plotData$x[round(length(plotData$x)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
+    points(plotData$x[length(plotData$x)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+  })
+
+  output$xt_plot <- renderPlot({
+    plotData <- data_euler()
+    plot(plotData$t, plotData$x, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="x")
+    points(plotData$t[1], plotData$x[1], col="blue", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$x[round(length(plotData$x)/2)], col="green", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$x[length(plotData$x)], col="purple", pch=20, cex=2.5) # End
+  })
+
+  output$yt_plot <- renderPlot({
+    plotData <- data_euler()
+    plot(plotData$t, plotData$y, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="y")
+    points(plotData$t[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+  })
+})
+    
+  
+observeEvent(input$runge, {
+  show_combined_xt_yt(TRUE)
+  data_runge <- reactive({
+    RungeKuttaSystemTable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick, (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)
+  }) 
+    
+  output$xy_plot <- renderPlot({
+    plotData <- data_runge()
+    plot(plotData$x, plotData$y, col="red", pch=20, cex=1.5, xlab="x", ylab="y")
+    points(plotData$x[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
+    points(plotData$x[round(length(plotData$x)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
+    points(plotData$x[length(plotData$x)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+  })
+
+  output$xt_plot <- renderPlot({
+    plotData <- data_runge()
+    plot(plotData$t, plotData$x, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="x")
+    points(plotData$t[1], plotData$x[1], col="blue", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$x[round(length(plotData$x)/2)], col="green", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$x[length(plotData$x)], col="purple", pch=20, cex=2.5) # End
+  })
+
+  output$yt_plot <- renderPlot({
+    plotData <- data_runge()
+    plot(plotData$t, plotData$y, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="y")
+    points(plotData$t[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+  })
+})
+
+observeEvent(input$combined_plot, {
+  show_combined_xt_yt(FALSE) # Hide the combined x vs t and y vs t plot
+    output$xy_plot <- renderPlot({
+      plotData_euler <- data_euler()
+      plotData_heun <- data_heun()
+      plotData_runge <- data_runge()
+      
+      
+      plot(plotData_euler$x, plotData_euler$y, type="l", col="red")
+      lines(plotData_heun$x, plotData_heun$y, col="green")
+      lines(plotData_runge$x, plotData_runge$y, col="blue")
+    })
+    
+    output$xt_plot <- renderPlot({
+      plotData_euler <- data_euler()
+      plotData_heun <- data_heun()
+      plotData_runge <- data_runge()
+      
+
+      plot(plotData_euler$t, plotData_euler$x, type="l", col="red")
+      lines(plotData_heun$t, plotData_heun$x, col="green")
+      lines(plotData_runge$t, plotData_runge$x, col="blue")
+    })
+    
+    output$yt_plot <- renderPlot({
+      plotData_euler <- data_euler()
+      plotData_heun <- data_heun()
+      plotData_runge <- data_runge()
+      
+
+      plot(plotData_euler$t, plotData_euler$y, type="l", col="red")
+      lines(plotData_heun$t, plotData_heun$y, col="green")
+      lines(plotData_runge$t, plotData_runge$y, col="blue")
+    })
+})
+
+# Render the combined x vs t and y vs t plot
+output$combined_xt_yt_plot <- renderPlot({
+  if(show_combined_xt_yt()) {
+    plotData <- data_euler()  # Or any other chosen method's data
+
+    # Plot x vs t
+    plot(plotData$t, plotData$x, type = "l", col = "red", ylim = c(min(plotData$x, plotData$y), max(plotData$x, plotData$y)), xlab = "Time (t)", ylab = "x")
+
+    # Prepare to overlay y vs t plot
+    par(new = TRUE)
+
+    # Plot y vs t on the same graph
+    plot(plotData$t, plotData$y, type = "l", col = "blue", xlab = "", ylab = "", axes = FALSE, ylim = c(min(plotData$x, plotData$y), max(plotData$x, plotData$y)))
+
+    # Add right y-axis for y vs t plot
+    axis(side = 4)
+    mtext("y", side = 4, line = 3)
+  }
+})
+
+  # Reset the visibility when any method is chosen
+  observe({
+    input$euler
+    input$heun
+    input$runge
+    show_combined_xt_yt(TRUE) # Show the combined x vs t and y vs t plot
   })
     
-    
-    
-    observeEvent(input$runge, {
-    output$xy_plot <- renderPlot({RungeKuttaSystemTable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,         (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)})
-  
-    output$xt_plot <- renderPlot(plot(RungeKuttaSystemTable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, RungeKuttaSystemTable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$x, xlab = "t", ylab = "x"))
-
-    output$yt_plot <- renderPlot(plot(RungeKuttaSystemTable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick,     (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$t, RungeKuttaSystemTable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick,           input$a_pick, input$b_pick,  (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)$y, xlab = "t", ylab = "y"))
-  })
 }
 
 shinyApp(ui = ui_methods, server = server_methods)
