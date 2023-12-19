@@ -258,7 +258,7 @@ observeEvent(input$combined_plot, {
 # Render the combined x vs t and y vs t plot
 output$combined_xt_yt_plot <- renderPlot({
   if(show_combined_xt_yt()) {
-    plotData <- data_euler()  # Or any other chosen method's data
+    plotData <- data_heun()  # Or any other chosen method's data
 
     # Plot x vs t
     plot(plotData$t, plotData$x, type = "l", lwd=6.5, col = "orange2", ylim = c(min(plotData$x, plotData$y), max(plotData$x, plotData$y)), xlab = "Time (t)", ylab = "x & y")
