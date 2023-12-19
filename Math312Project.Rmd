@@ -47,10 +47,6 @@ RungeKuttaSystemTable<-function(Fxyt=function(x,y,t){}, Gxyt=function(x,y,t){},x
     x[i]<-x[i-1]+(h/6)*(k1+2*k2+2*k3+k4)
     y[i]<-y[i-1]+(h/6)*(l1+2*l2+2*l3+l4)
   }
-  plot(x,y,col="red",pch=20,cex=1.5)
-  points(x[1],y[1],col="blue",pch=20,cex=2.5)
-  recordPlot()
-  
   table<-data.frame(t,x,y)
   return(table)
 }
@@ -78,18 +74,18 @@ library(shiny)
 ui_methods <- fluidPage(
   sidebarLayout(
     sidebarPanel(
-      h4("Select things:"),
+      h4("Select Options:"),
+      actionButton("euler", "Euler's Method", style = "color: white; background-color: cornflowerblue; border-color: black;"),
+      actionButton("heun", "Heun's Method", style = "color: white; background-color: darkred; border-color: black;"),
+      actionButton("runge", "Runge-Kutta Method", style = "color: white; background-color: purple; border-color: black;"),
+      actionButton("combined_plot", "Plot Combined Methods", style = "color: white; background-color: green; border-color: black;"),
       textInput("eq_dxdt", "Equation for dx/dt", value = "sin(y)"),  # Equation input for dx/dt
       textInput("eq_dydt", "Equation for dy/dt", value = "cos(x)"),  # Equation input for dy/dt
-      actionButton("euler", "Euler's Method"),
-      actionButton("heun", "Heun's Method"),
-      actionButton("runge", "Runge-Kutta Method"),
-      actionButton("combined_plot", "Plot Combined Methods"),
-      numericInput("x0_pick", "Initial x value (x0)", value = 0, min = 0, max = 100),
-      numericInput("y0_pick", "Initial y value (y0)", value = 0, min = 0, max = 100),
+      numericInput("x0_pick", HTML("Initial x value (x<sub>0</sub>)"), value = 0, min = 0, max = 100),
+      numericInput("y0_pick", HTML("Initial y value (y<sub>0</sub>)"), value = 0, min = 0, max = 100),
       numericInput("a_pick", "Start Time", value = 0, min = 0, max = 100),
       numericInput("b_pick", "End Time", value = 1, min = 0, max = 100, step = 0.1),
-      numericInput("dt_pick", "Delta t (0<dt<=1)", value = 0.01, min = 0, max = 1, step = 0.01),
+      numericInput("dt_pick", HTML("Delta t (0 &lt; dt &le; 1)"), value = 0.01, min = 0, max = 1, step = 0.01),
     ),
     mainPanel(
       plotOutput("xy_plot"),
@@ -132,97 +128,94 @@ server_methods <- function(input, output) {
   
     
 observeEvent(input$heun, {
-  show_combined_xt_yt(TRUE)
   data_heun <- reactive({
     HeunSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick, (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)
   }) 
     
   output$xy_plot <- renderPlot({
     plotData <- data_heun()
-    plot(plotData$x, plotData$y, col="red", pch=20, cex=1.5, xlab="x", ylab="y")
-    points(plotData$x[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
-    points(plotData$x[round(length(plotData$x)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
-    points(plotData$x[length(plotData$x)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+    plot(plotData$x, plotData$y, col="red3", pch=20, cex=1.5, xlab="x", ylab="y")
+    points(plotData$x[1], plotData$y[1], col="forestgreen", pch=20, cex=2.5) # Beginning
+    points(plotData$x[round(length(plotData$x)/2)], plotData$y[round(length(plotData$y)/2)], col="gold", pch=20, cex=2.5) # Middle
+    points(plotData$x[length(plotData$x)], plotData$y[length(plotData$y)], col="red", pch=20, cex=2.5) # End
   })
 
   output$xt_plot <- renderPlot({
     plotData <- data_heun()
-    plot(plotData$t, plotData$x, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="x")
-    points(plotData$t[1], plotData$x[1], col="blue", pch=20, cex=2.5) # Beginning
-    points(plotData$t[round(length(plotData$t)/2)], plotData$x[round(length(plotData$x)/2)], col="green", pch=20, cex=2.5) # Middle
-    points(plotData$t[length(plotData$t)], plotData$x[length(plotData$x)], col="purple", pch=20, cex=2.5) # End
+    plot(plotData$t, plotData$x, type="l", lwd=6.5, col="orange2", xlab="Time (t)", ylab="x")
+    points(plotData$t[1], plotData$x[1], col="forestgreen", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$x[round(length(plotData$x)/2)], col="gold", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$x[length(plotData$x)], col="red", pch=20, cex=2.5) # End
   })
 
   output$yt_plot <- renderPlot({
     plotData <- data_heun()
-    plot(plotData$t, plotData$y, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="y")
-    points(plotData$t[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
-    points(plotData$t[round(length(plotData$t)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
-    points(plotData$t[length(plotData$t)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+    plot(plotData$t, plotData$y, type="l", lwd=6.5, col="blue", xlab="Time (t)", ylab="y")
+    points(plotData$t[1], plotData$y[1], col="forestgreen", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$y[round(length(plotData$y)/2)], col="gold", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$y[length(plotData$y)], col="red", pch=20, cex=2.5) # End
   })
 })
  
 
 observeEvent(input$euler, {
-  show_combined_xt_yt(TRUE)
   data_euler <- reactive({
     EulerSystemNATable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick, (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)
   }) 
     
   output$xy_plot <- renderPlot({
     plotData <- data_euler()
-    plot(plotData$x, plotData$y, col="red", pch=20, cex=1.5, xlab="x", ylab="y")
-    points(plotData$x[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
-    points(plotData$x[round(length(plotData$x)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
-    points(plotData$x[length(plotData$x)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+    plot(plotData$x, plotData$y, col="cornflowerblue", pch=20, cex=1.5, xlab="x", ylab="y")
+    points(plotData$x[1], plotData$y[1], col="forestgreen", pch=20, cex=2.5) # Beginning
+    points(plotData$x[round(length(plotData$x)/2)], plotData$y[round(length(plotData$y)/2)], col="gold", pch=20, cex=2.5) # Middle
+    points(plotData$x[length(plotData$x)], plotData$y[length(plotData$y)], col="red", pch=20, cex=2.5) # End
   })
 
   output$xt_plot <- renderPlot({
     plotData <- data_euler()
-    plot(plotData$t, plotData$x, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="x")
-    points(plotData$t[1], plotData$x[1], col="blue", pch=20, cex=2.5) # Beginning
-    points(plotData$t[round(length(plotData$t)/2)], plotData$x[round(length(plotData$x)/2)], col="green", pch=20, cex=2.5) # Middle
-    points(plotData$t[length(plotData$t)], plotData$x[length(plotData$x)], col="purple", pch=20, cex=2.5) # End
+    plot(plotData$t, plotData$x, type="l", lwd=6.5, col="orange2", xlab="Time (t)", ylab="x")
+    points(plotData$t[1], plotData$x[1], col="forestgreen", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$x[round(length(plotData$x)/2)], col="gold", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$x[length(plotData$x)], col="red", pch=20, cex=2.5) # End
   })
 
   output$yt_plot <- renderPlot({
     plotData <- data_euler()
-    plot(plotData$t, plotData$y, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="y")
-    points(plotData$t[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
-    points(plotData$t[round(length(plotData$t)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
-    points(plotData$t[length(plotData$t)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+    plot(plotData$t, plotData$y, type="l", lwd=6.5, col="blue", xlab="Time (t)", ylab="y")
+    points(plotData$t[1], plotData$y[1], col="forestgreen", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$y[round(length(plotData$y)/2)], col="gold", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$y[length(plotData$y)], col="red", pch=20, cex=2.5) # End
   })
 })
     
   
 observeEvent(input$runge, {
-  show_combined_xt_yt(TRUE)
   data_runge <- reactive({
     RungeKuttaSystemTable(Fxyt(), Gxyt(), input$x0_pick, input$y0_pick, input$a_pick, input$b_pick, (input$b_pick-input$a_pick) * (1/input$dt_pick) + 1)
   }) 
     
   output$xy_plot <- renderPlot({
     plotData <- data_runge()
-    plot(plotData$x, plotData$y, col="red", pch=20, cex=1.5, xlab="x", ylab="y")
-    points(plotData$x[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
-    points(plotData$x[round(length(plotData$x)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
-    points(plotData$x[length(plotData$x)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+    plot(plotData$x, plotData$y, col="purple", pch=20, cex=1.5, xlab="x", ylab="y")
+    points(plotData$x[1], plotData$y[1], col="forestgreen", pch=20, cex=2.5) # Beginning
+    points(plotData$x[round(length(plotData$x)/2)], plotData$y[round(length(plotData$y)/2)], col="gold", pch=20, cex=2.5) # Middle
+    points(plotData$x[length(plotData$x)], plotData$y[length(plotData$y)], col="red", pch=20, cex=2.5) # End
   })
 
   output$xt_plot <- renderPlot({
     plotData <- data_runge()
-    plot(plotData$t, plotData$x, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="x")
-    points(plotData$t[1], plotData$x[1], col="blue", pch=20, cex=2.5) # Beginning
-    points(plotData$t[round(length(plotData$t)/2)], plotData$x[round(length(plotData$x)/2)], col="green", pch=20, cex=2.5) # Middle
-    points(plotData$t[length(plotData$t)], plotData$x[length(plotData$x)], col="purple", pch=20, cex=2.5) # End
+    plot(plotData$t, plotData$x, type="l", lwd=6.5, col="orange2", xlab="Time (t)", ylab="x")
+    points(plotData$t[1], plotData$x[1], col="forestgreen", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$x[round(length(plotData$x)/2)], col="gold", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$x[length(plotData$x)], col="red", pch=20, cex=2.5) # End
   })
 
   output$yt_plot <- renderPlot({
     plotData <- data_runge()
-    plot(plotData$t, plotData$y, type="l", lwd=6.5, col="black", xlab="Time (t)", ylab="y")
-    points(plotData$t[1], plotData$y[1], col="blue", pch=20, cex=2.5) # Beginning
-    points(plotData$t[round(length(plotData$t)/2)], plotData$y[round(length(plotData$y)/2)], col="green", pch=20, cex=2.5) # Middle
-    points(plotData$t[length(plotData$t)], plotData$y[length(plotData$y)], col="purple", pch=20, cex=2.5) # End
+    plot(plotData$t, plotData$y, type="l", lwd=6.5, col="blue", xlab="Time (t)", ylab="y")
+    points(plotData$t[1], plotData$y[1], col="forestgreen", pch=20, cex=2.5) # Beginning
+    points(plotData$t[round(length(plotData$t)/2)], plotData$y[round(length(plotData$y)/2)], col="gold", pch=20, cex=2.5) # Middle
+    points(plotData$t[length(plotData$t)], plotData$y[length(plotData$y)], col="red", pch=20, cex=2.5) # End
   })
 })
 
@@ -234,9 +227,9 @@ observeEvent(input$combined_plot, {
       plotData_runge <- data_runge()
       
       
-      plot(plotData_euler$x, plotData_euler$y, type="l", col="red")
-      lines(plotData_heun$x, plotData_heun$y, col="green")
-      lines(plotData_runge$x, plotData_runge$y, col="blue")
+      plot(plotData_euler$x, plotData_euler$y, type="l", lwd=6.5, col="cornflowerblue", xlab="x", ylab="y")
+      lines(plotData_heun$x, plotData_heun$y, type="l", lwd=6.5, col="red3")
+      lines(plotData_runge$x, plotData_runge$y, type="l", lwd=6.5, col="purple")
     })
     
     output$xt_plot <- renderPlot({
@@ -245,9 +238,9 @@ observeEvent(input$combined_plot, {
       plotData_runge <- data_runge()
       
 
-      plot(plotData_euler$t, plotData_euler$x, type="l", col="red")
-      lines(plotData_heun$t, plotData_heun$x, col="green")
-      lines(plotData_runge$t, plotData_runge$x, col="blue")
+      plot(plotData_euler$t, plotData_euler$x, type="l", lwd=6.5, col="cornflowerblue", xlab="Time (t)", ylab="x")
+      lines(plotData_heun$t, plotData_heun$x, type="l", lwd=6.5, col="red3")
+      lines(plotData_runge$t, plotData_runge$x, type="l", lwd=6.5, col="purple")
     })
     
     output$yt_plot <- renderPlot({
@@ -256,9 +249,9 @@ observeEvent(input$combined_plot, {
       plotData_runge <- data_runge()
       
 
-      plot(plotData_euler$t, plotData_euler$y, type="l", col="red")
-      lines(plotData_heun$t, plotData_heun$y, col="green")
-      lines(plotData_runge$t, plotData_runge$y, col="blue")
+      plot(plotData_euler$t, plotData_euler$y, type="l", lwd=6.5, col="cornflowerblue", xlab="Time (t)", ylab="y")
+      lines(plotData_heun$t, plotData_heun$y, type="l", lwd=6.5, col="red3")
+      lines(plotData_runge$t, plotData_runge$y, type="l", lwd=6.5, col="purple")
     })
 })
 
@@ -268,13 +261,13 @@ output$combined_xt_yt_plot <- renderPlot({
     plotData <- data_euler()  # Or any other chosen method's data
 
     # Plot x vs t
-    plot(plotData$t, plotData$x, type = "l", col = "red", ylim = c(min(plotData$x, plotData$y), max(plotData$x, plotData$y)), xlab = "Time (t)", ylab = "x")
+    plot(plotData$t, plotData$x, type = "l", lwd=6.5, col = "orange2", ylim = c(min(plotData$x, plotData$y), max(plotData$x, plotData$y)), xlab = "Time (t)", ylab = "x & y")
 
     # Prepare to overlay y vs t plot
     par(new = TRUE)
 
     # Plot y vs t on the same graph
-    plot(plotData$t, plotData$y, type = "l", col = "blue", xlab = "", ylab = "", axes = FALSE, ylim = c(min(plotData$x, plotData$y), max(plotData$x, plotData$y)))
+    plot(plotData$t, plotData$y, type = "l", lwd=6.5, col = "blue", xlab = "", ylab = "", axes = FALSE, ylim = c(min(plotData$x, plotData$y), max(plotData$x, plotData$y)))
 
     # Add right y-axis for y vs t plot
     axis(side = 4)
