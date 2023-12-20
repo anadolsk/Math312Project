@@ -5,7 +5,10 @@ date: "2023-12-05"
 output: html_document
 ---
 
+The last code chunk runs the app - make sure to load all of the chunks above in order for it to work!
+
 ```{r}
+#Heun's Method function
 HeunSystemNATable<-function(Fxyt=function(x,y,t){},Gxyt=function(x,y,t){},x0,y0,a,b,n){
   x<-0
   y<-0
@@ -24,6 +27,7 @@ HeunSystemNATable<-function(Fxyt=function(x,y,t){},Gxyt=function(x,y,t){},x0,y0,
 ```
 
 ```{r}
+#Runge-Kutta Method function
 RungeKuttaSystemTable<-function(Fxyt=function(x,y,t){}, Gxyt=function(x,y,t){},x0,y0,a,b,n){
   x<-0
   y<-0
@@ -53,6 +57,7 @@ RungeKuttaSystemTable<-function(Fxyt=function(x,y,t){}, Gxyt=function(x,y,t){},x
 ```
 
 ```{r}
+#Euler's method function
 EulerSystemNATable<-function(Fxyt=function(x,y,t){},Gxyt=function(x,y,t){},x0,y0,a,b,n){
   x<-0
   y<-0
@@ -69,6 +74,7 @@ EulerSystemNATable<-function(Fxyt=function(x,y,t){},Gxyt=function(x,y,t){},x0,y0
 ```
 
 ```{r}
+#sets up the ui for the app
 library(shiny)
 # Build the shiny user interface
 ui_methods <- fluidPage(
@@ -100,7 +106,7 @@ ui_methods <- fluidPage(
 
 
 ```{r eval = FALSE}
-# Build the shiny server
+# Build the shiny server and lays out how the app will interact with the functions
 server_methods <- function(input, output) {
   Fxyt <- reactive({
     eval(parse(text = paste0("function(x, y, t) {", input$eq_dxdt, "}")))
@@ -284,7 +290,9 @@ output$combined_xt_yt_plot <- renderPlot({
   })
     
 }
+```
 
+``` {r}
+#this will run the app!
 shinyApp(ui = ui_methods, server = server_methods)
-
 ```
