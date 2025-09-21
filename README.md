@@ -1,0 +1,1 @@
+This project was completed for Differential Equations in Fall 2023. It contains a Shiny app for visual comparison of 3 different equations used to estimate Ordinary Differential Equations: Euler's Method, Heun's Method, and the Runge-Kutta method.
